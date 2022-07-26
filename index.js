@@ -20,23 +20,23 @@ const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology:
 
  
 
-// function verifyJWT(req, res, next){
-//   const authHeader = req.headers.authorization;
-//    console.log(authHeader)
-//   if(!authHeader){
-//     return res.status(401).send({message:'unauthorized access'});
-//   }
-//   const token = authHeader.split(' ')[1]
-//   jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded)=>{
-//     if(err){
-//       return res.status(403).send({meassage:'Forbeidden access'})
-//     }
-//     console.log('decoded', decoded)
-//     req.decoded = decoded;
-//     next()
-//   })
+function verifyJWT(req, res, next){
+  const authHeader = req.headers.authorization;
+  console.log(authHeader)
+  if(!authHeader){
+    return res.status(401).send({message:'unauthorized access'});
+  }
+  const token = authHeader.split(' ')[1]
+  jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, function(err, decoded){
+    if(err){
+      return res.status(403).send({meassage:'Forbeidden access'})
+    }
+    console.log('decoded', decoded)
+    req.decoded = decoded;
+    next()
+  })
  
-//  }
+ }
 
 
 
@@ -223,33 +223,43 @@ async function run() {
     
 
 
-    app.put('/user/:email', async (req, res) => {
-      const email = req.params.email;
-      const user = req.body;
-      const filter = { email: email };
-      const options = { upsert: true };
-      const updateDoc = {
-        $set: user,
-      };
-      const result = await userCollection.updateOne(filter, updateDoc, options);
-      const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '2h' })
-      res.send( {result, accessToken:token});
-    })
-    app.get('/myOrders',  async (req, res) => {
-      // const decodedEmail=req.decoded.email
+      app.put('/user/:email', async (req, res) => {
+        const email = req.params.email;
+        const user = req.body;
+        const filter = { email: email };
+        const options = { upsert: true };
+        const updateDoc = {
+          $set: user,
+        };
+        const result = await userCollection.updateOne(filter, updateDoc, options);
+        const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '2h' })
+        res.send( {result, accessToken:token});
+      })
+      
+    app.get('/myOrders', verifyJWT, async (req, res) => {
+    //  const authorization = req.headers.authorization
+   
+      
       const customerEmail = req.query.customerEmail;
+      const decodedEmail=req.decoded.email
     
-        // if(email === decodedEmail){
+      
+    
+         if(customerEmail === decodedEmail){
        const query = {customerEmail:customerEmail};
       
        const cursor = orderCollection.find(query);
            const myOrders = await cursor.toArray();
-           res.send(myOrders);
+          return res.send(myOrders)}
+          else{
+            return res.status(403).send({message: 'Forbidden access'})
+          };
         
           });
 
               //  manage all orders
           app.get('/orders', async (req, res) => {
+
             const query = {};
             const cursor = orderCollection.find(query);
             const allOrders = await cursor.toArray();
@@ -257,7 +267,7 @@ async function run() {
         });
      
         // myOrders delete
-    app.delete('/myOrders/:id', async(req, res) =>{
+    app.delete('/myOrders/:id',  async(req, res) =>{
       const id = req.params.id;
       const query = {_id: ObjectId(id)}
       const result = await orderCollection.deleteOne(query)
