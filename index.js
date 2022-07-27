@@ -57,7 +57,7 @@ async function run() {
     });
 
 
-    app.get('/users', async(req, res) =>{
+    app.get('/users', verifyJWT, async(req, res) =>{
       const query = {};
       const cursor = userCollection.find(query)
       const users = await cursor.toArray()
@@ -78,7 +78,7 @@ async function run() {
     // })
 
    
-    // app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+    // app.put('/users/admin/:email', verifyJWT, async (req, res) => {
     //   const email = req.params.email;
     //    const requester = req.decoded.email;
     //   const requesterAccount = await userCollection.findOne({ email: requester });
@@ -89,31 +89,31 @@ async function run() {
     //     };
     //     const result = await userCollection.updateOne(filter, updateDoc);
     //     res.send({result});
-    //    }} )
-      // else{ 
-      //   res.status(403).send({message: 'forbidden'});
-      // }})
+    //    }
+    //   else{ 
+    //     res.status(403).send({message: 'forbidden'});
+    //   }})
     
       // app.put('/user/:email', async (req, res) => {
       //   const email = req.params.email;
       //   const user = req.body;
       //   console.log(user)
-      //   // const requester = req.decoded.email;
-      //   // const requesterAccount = await userCollection.findOne({ email: requester });
-      //   // if (requesterAccount.role === 'admin') {
+      //   const requester = req.decoded.email;
+      //   const requesterAccount = await userCollection.findOne({ email: requester });
+      //   if (requesterAccount.role === 'admin') {
       //     const filter = { email: email };
       //     const options = {upsert: true}
       //     const updateDoc = {
       //       $set: user,
       //     };
       //     const result = await userCollection.updateOne(filter, updateDoc, options);
-      //     // const token = jwt.sign()
+      //      const token = jwt.sign()
       //     res.send(result);
-      //   })
-      // // else{ 
-      // //   res.status(403).send({message: 'forbidden'});
-      // // }})
-
+      //   }
+      // else{ 
+      //   res.status(403).send({message: 'forbidden'});
+      // }})
+    
     
 
     app.get('/part/:id', async(req , res) =>{
@@ -220,17 +220,47 @@ async function run() {
       //  res.send({accessToken})
       //  console.log(accessToken)
       //  })
-    
 
 
-      app.put('/user/:email', async (req, res) => {
+    app.get('/admin/:email', async(req,res)=>{
+      const email=req.params.email
+    const user = await userCollection.findOne({email:email})
+    const isAdmin = user.role === 'admin';
+    res.send({admin: isAdmin})
+    })
+
+
+      app.put('/users/admin/:email', verifyJWT, async (req, res) => {
         const email = req.params.email;
+        const requester = req.decoded.email;
+        const requesterAccount = await userCollection.findOne({email:requester})
+        if(requesterAccount.role === 'admin'){
+          const filter = { email: email };
+          const updateDoc = {
+           $set:{role:'admin'},
+         };
+       const result = await userCollection.updateOne(filter, updateDoc);
+        res.send(result);
+        }
+      else{
+        res.status(403).send({message: 'forbidden'})
+      }
+
+        })
+        
+       
+
+      app.put('/users/:email', async (req, res) => {
+        const email = req.params.email;
+        console.log(email)
         const user = req.body;
-        const filter = { email: email };
+        console.log(user)
+        const filter = {email:email };
         const options = { upsert: true };
         const updateDoc = {
           $set: user,
         };
+        console.log('updatedoc',updateDoc)
         const result = await userCollection.updateOne(filter, updateDoc, options);
         const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '2h' })
         res.send( {result, accessToken:token});
@@ -238,14 +268,9 @@ async function run() {
       
     app.get('/myOrders', verifyJWT, async (req, res) => {
     //  const authorization = req.headers.authorization
-   
-      
-      const customerEmail = req.query.customerEmail;
+     const customerEmail = req.query.customerEmail;
       const decodedEmail=req.decoded.email
-    
-      
-    
-         if(customerEmail === decodedEmail){
+     if(customerEmail === decodedEmail){
        const query = {customerEmail:customerEmail};
       
        const cursor = orderCollection.find(query);
