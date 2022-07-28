@@ -78,7 +78,7 @@ async function run() {
     })
    
    
-     app.get('/part/:id', async(req , res) =>{
+    app.get('/part/:id', async(req , res) =>{
       const id = req.params.id;
       const query = {_id: ObjectId(id)};
       const part = await partsCollection.findOne(query);
@@ -106,8 +106,8 @@ async function run() {
 
   // add product
   app.post('/part',async(req, res)=>{
-    const newReview = req.body;
-    const result = await partsCollection.insertOne(newReview);
+    const newProduct = req.body;
+    const result = await partsCollection.insertOne(newProduct);
     res.send(result);
   })
 
@@ -130,10 +130,10 @@ async function run() {
    
 
   // payment
-  app.get('/orders/:id', verifyJWT, async(req, res)=>{
+  app.get('/myOrders/:id', verifyJWT, async(req, res)=>{
     const id = req.params.id;
     const query = {_id:ObjectId(id)};
-    const orders = await ordersCollection.findOne(query);
+    const orders = await orderCollection.findOne(query);
     res.send(orders);
 
   })
@@ -234,14 +234,13 @@ async function run() {
     })
      
 
-         // quantity inecrease
+        //  quantity inecrease
          app.put('/orders', async(req, res) =>{
           const id = req.params.id;
           const updatedProduct = req.body
           // console.log(req.body)
           // console.log(updatedProduct)
-          const {updateQuantity} = updatedProduct
-          console.log(updatedProduct)
+          
         
           
          const filter = {_id : ObjectId(id)}
