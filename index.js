@@ -285,9 +285,7 @@ run().catch(console.dir);
 app.get('/', (req, res) => {
   res.send('Hello !')
 })
-app.get('/', (req, res) => {
-  res.send('Herokuooo !')
-})
+
 
 app.listen(port, () => {
   console.log(` listening on port ${port}`)
